@@ -1,0 +1,33 @@
+# Optional local/prod-shaped run. CI builds the Dockerfile only and does not start this stack.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dont-wishlist:ci
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-ci-secret-at-least-16-chars!!}
+      DATABASE_URL: file:/data/app.db
+      NODE_ENV: production
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - wishlist-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+    restart: unless-stopped
+    profiles: ["run"]
+
+volumes:
+  wishlist-data:

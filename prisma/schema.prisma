@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  games        Game[]
+  saleChecks   SaleCheck[]
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  status      String
+  hoursPlayed Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SaleCheck {
+  id          String    @id @default(cuid())
+  userId      String
+  candidates  String
+  result      String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verdicts    Verdict[]
+
+  @@index([userId])
+}
+
+model Verdict {
+  id          String    @id @default(cuid())
+  saleCheckId String
+  itemTitle   String
+  verdict     String
+  createdAt   DateTime  @default(now())
+  saleCheck   SaleCheck @relation(fields: [saleCheckId], references: [id], onDelete: Cascade)
+
+  @@index([saleCheckId])
+}
