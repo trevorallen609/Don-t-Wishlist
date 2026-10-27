@@ -1,35 +1,13 @@
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { GameForm } from "@/components/game-form";
 import { LibraryList } from "@/components/library-list";
 import { SiteHeader } from "@/components/site-header";
+import { seedSampleLibraryAction } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { getLibraryGames, summarizeLibrary } from "@/lib/queries";
-import { SAMPLE_LIBRARY } from "@/mocks/sample-library";
 
 export const dynamic = "force-dynamic";
-
-async function seedSampleLibrary() {
-  "use server";
-  const user = await requireUser();
-  if (!user) redirect("/login");
-  const count = await prisma.game.count({ where: { userId: user.id } });
-  if (count > 0) redirect("/library");
-
-  await prisma.game.createMany({
-    data: SAMPLE_LIBRARY.map((g) => ({
-      userId: user.id,
-      title: g.title,
-      status: g.status,
-      hoursPlayed: g.hoursPlayed ?? null,
-      notes: g.notes ?? null,
-    })),
-  });
-  revalidatePath("/library");
-  redirect("/library");
-}
 
 export default async function LibraryPage() {
   const user = await requireUser();
@@ -68,7 +46,7 @@ export default async function LibraryPage() {
         <GameForm />
 
         {games.length === 0 ? (
-          <form action={seedSampleLibrary}>
+          <form action={seedSampleLibraryAction}>
             <button
               type="submit"
               className="rounded-md border border-line px-4 py-2 text-sm text-mist hover:border-foam/40 hover:text-foam"
