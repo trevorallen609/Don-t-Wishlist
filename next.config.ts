@@ -1,13 +1,10 @@
-
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-
   outputFileTracingIncludes: {
-    "/*": ["./prisma/dev.db"],
+    "/*": ["./prisma/empty.db", "./prisma/dev.db", "./prisma/schema.prisma"],
   },
-
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: "inline",
