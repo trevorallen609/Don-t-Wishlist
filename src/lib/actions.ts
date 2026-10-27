@@ -19,6 +19,7 @@ import {
   credentialsSchema,
   verdictKindSchema,
 } from "@/lib/schemas";
+import { SAMPLE_LIBRARY } from "@/mocks/sample-library";
 
 export type { ActionState };
 
@@ -45,7 +46,7 @@ export async function registerAction(
       passwordHash: await hashPassword(parsed.data.password),
     },
   });
-  await createSession(user.id);
+  await createSession(user.id, user.email);
   redirect("/library");
 }
 
@@ -65,7 +66,7 @@ export async function loginAction(
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
     return { error: "Invalid email or password." };
   }
-  await createSession(user.id);
+  await createSession(user.id, user.email);
   redirect("/library");
 }
 
@@ -107,6 +108,28 @@ export async function deleteGameAction(gameId: string) {
   if (!user) return;
   await prisma.game.deleteMany({ where: { id: gameId, userId: user.id } });
   revalidatePath("/library");
+}
+
+/** Seeds from `src/mocks/sample-library.ts` — static file, not live Steam. */
+export async function seedSampleLibraryAction() {
+  const user = await requireUser();
+  if (!user) redirect("/login");
+
+  const count = await prisma.game.count({ where: { userId: user.id } });
+  if (count === 0) {
+    await prisma.game.createMany({
+      data: SAMPLE_LIBRARY.map((g) => ({
+        userId: user.id,
+        title: g.title,
+        status: g.status,
+        hoursPlayed: g.hoursPlayed ?? null,
+        notes: g.notes ?? null,
+      })),
+    });
+  }
+
+  revalidatePath("/library");
+  redirect("/library");
 }
 
 export async function runSaleCheckAction(
